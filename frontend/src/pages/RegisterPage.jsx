@@ -42,7 +42,7 @@ const RegisterPage = () => {
 
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5002/create_account",
+        "http://localhost:5002/create_account",
         {
           email,
           username,

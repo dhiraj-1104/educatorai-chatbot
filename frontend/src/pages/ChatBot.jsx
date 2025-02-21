@@ -96,7 +96,7 @@ const ChatBot = () => {
     setQuestion("");
 
     try {
-      const response = await axios.post("http://127.0.0.1:5002/ask", {
+      const response = await axios.post("http://localhost:5002/ask", {
         email,
         question,
         session_id: selectedSession, // Uses the updated session ID
