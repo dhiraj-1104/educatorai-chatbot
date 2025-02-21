@@ -46,7 +46,7 @@ const LoginPage = () => {
         type: "success",
       });
 
-      localStorage.setItem("sessionId",JSON.stringify(generateSessionId()));
+      localStorage.setItem("sessionId",generateSessionId());
       localStorage.setItem("email",JSON.stringify(email));
       
 

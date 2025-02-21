@@ -9,7 +9,7 @@ const ChatBot = () => {
   ]);
   const [email, setEmail] = useState("");
   const [session_id, setSession_id] = useState("");
-  const [sessions, setSessions] = useState([]); // Will now store { sessionId, firstMessage }
+  const [sessions, setSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
   const [question, setQuestion] = useState("");
 
@@ -24,19 +24,17 @@ const ChatBot = () => {
         .get(`http://localhost:5002/get_chat_sessions`, { params: { email } })
         .then(async (response) => {
           if (response.data.sessions) {
-            // Fetch first message for each session
             const sessionPromises = response.data.sessions.map(
               async (sessionId) => {
                 const chatResponse = await axios.get(
                   `http://localhost:5002/get_chat_history`,
-                  {
-                    params: { email, session_id: sessionId },
-                  }
+                  { params: { email, session_id: sessionId } }
                 );
-
+                
                 const firstMessage =
                   chatResponse.data.chat_history?.[0]?.message ||
                   `Session ${sessionId}`;
+                
                 return { sessionId, firstMessage };
               }
             );
@@ -55,10 +53,7 @@ const ChatBot = () => {
         params: { email, session_id: sessionId },
       })
       .then((response) => {
-        if (
-          response.data.chat_history &&
-          response.data.chat_history.length > 0
-        ) {
+        if (response.data.chat_history?.length > 0) {
           const formattedMessages = response.data.chat_history
             .map((chat) => [
               { sender: "user", text: chat.message },
@@ -66,22 +61,16 @@ const ChatBot = () => {
             ])
             .flat();
 
-          // Set the session ID based on the first message
           const firstMessage = response.data.chat_history[0].message;
-          setSelectedSession(firstMessage);
-          localStorage.setItem("sessionId", firstMessage);
+          setSelectedSession(sessionId);
+          localStorage.setItem("sessionId", sessionId);
 
           setMessages([
             { sender: "bot", text: `Session "${firstMessage}" loaded.` },
             ...formattedMessages,
           ]);
         } else {
-          setMessages([
-            {
-              sender: "bot",
-              text: `Session ${sessionId} loaded, but no messages found.`,
-            },
-          ]);
+          setMessages([{ sender: "bot", text: `Session loaded, but no messages found.` }]);
           setSelectedSession(sessionId);
         }
       })
@@ -96,17 +85,14 @@ const ChatBot = () => {
     setQuestion("");
 
     try {
-      const response = await axios.post("http://localhost:5002/ask", {
+      const response = await axios.post("http://127.0.0.1:5002/ask", {
         email,
         question,
-        session_id: selectedSession, // Uses the updated session ID
+        session_id: selectedSession || session_id,
       });
 
       if (response.data.session_id) {
-        localStorage.setItem(
-          "sessionId",
-          JSON.stringify(response.data.session_id)
-        );
+        localStorage.setItem("sessionId", response.data.session_id);
       }
 
       const botReply = {
@@ -115,46 +101,29 @@ const ChatBot = () => {
       };
       setMessages((prev) => [...prev, botReply]);
     } catch (error) {
-      
-      setMessages((prev) => [
-        ...prev,
-        { sender: "bot", text: "Error: Unable to fetch response" },
-      ]);
+      setMessages((prev) => [...prev, { sender: "bot", text: "Error: Unable to fetch response" }]);
     }
   };
-
 
   const handleLogOut = () => {
     localStorage.clear();
     navigate("/login");
-  }
+  };
 
   return (
     <>
-     <button
-        onClick={handleLogOut}
-        className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 z-50"
-      >
+      <button onClick={handleLogOut} className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 z-50">
         Logout
       </button>
-    
       <div className="flex flex-wrap justify-center">
-        {/* Chat Sessions */}
         <div className="hidden md:block relative w-[30%] md:w-[30%] ml-5">
           <div className="relative z-1 p-0.5 rounded-2xl bg-conic-gradient">
             <div className="relative bg-n-8 rounded-[1rem] min-h-[610px]">
-              <h2 className="text-lg font-semibold text-center mb-3 pt-2">Previous Charts</h2>
+              <h2 className="text-lg font-semibold text-center mb-3 pt-2">Previous Chats</h2>
               <ul>
                 {sessions.map((session) => (
-                  <li
-                    key={session.sessionId}
-                    className={`cursor-pointer p-2 m-1.5  rounded-lg ${
-                      selectedSession === session.firstMessage
-                        ? "bg-gray-700"
-                        : "bg-gray-800"
-                    } hover:bg-gray-600`}
-                    onClick={() => fetchChatHistory(session.sessionId)}
-                  >
+                  <li key={session.sessionId} className="cursor-pointer p-2 m-1.5 rounded-lg bg-gray-800 hover:bg-gray-600"
+                    onClick={() => fetchChatHistory(session.sessionId)}>
                     {session.firstMessage}
                   </li>
                 ))}
@@ -162,40 +131,19 @@ const ChatBot = () => {
             </div>
           </div>
         </div>
-
-        {/* Chat Box */}
         <div className="relative w-[70%] mx-auto md:w-[65%] mr-1">
           <div className="relative z-1 p-0.5 rounded-2xl bg-conic-gradient">
             <div className="relative bg-n-8 rounded-[1rem] min-h-[600px]">
               <div className="flex flex-col overflow-y-auto py-6 px-3 space-y-2 h-[550px]">
                 {messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`flex p-2 rounded-lg max-w-[75%] ${
-                      msg.sender === "user"
-                        ? "bg-blue-500 text-white self-end"
-                        : "bg-gray-200 text-black self-start"
-                    }`}
-                  >
+                  <div key={index} className={`flex p-2 rounded-lg max-w-[75%] ${msg.sender === "user" ? "bg-blue-500 text-white self-end" : "bg-gray-200 text-black self-start"}`}>
                     {msg.text}
                   </div>
                 ))}
               </div>
               <div className="flex p-2 border-t border-gray-300">
-                <input
-                  type="text"
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="Type a Message..."
-                  className="flex flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none"
-                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                />
-                <button
-                  className="ml-2 bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600"
-                  onClick={sendMessage}
-                >
-                  Send
-                </button>
+                <input type="text" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Type a Message..." className="flex flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none" onKeyDown={(e) => e.key === "Enter" && sendMessage()} />
+                <button className="ml-2 bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600" onClick={sendMessage}>Send</button>
               </div>
             </div>
           </div>
