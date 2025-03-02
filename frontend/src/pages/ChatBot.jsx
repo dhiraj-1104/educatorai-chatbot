@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import ReactMarkdown from 'react-markdown';
 
 const ChatBot = () => {
   const navigate = useNavigate();
@@ -115,10 +116,10 @@ const ChatBot = () => {
       <button onClick={handleLogOut} className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 z-50">
         Logout
       </button>
-      <div className="flex flex-wrap justify-center">
-        <div className="hidden md:block relative w-[30%] md:w-[30%] ml-5">
+      <div className="flex flex-wrap justify-center ">
+        <div className="hidden md:block relative w-[30%] md:w-[30%] ml-5 ">
           <div className="relative z-1 p-0.5 rounded-2xl bg-conic-gradient">
-            <div className="relative bg-n-8 rounded-[1rem] min-h-[610px]">
+            <div className="relative bg-n-8 rounded-[1rem] min-h-[610px] max-h-[610px] overflow-y-auto">
               <h2 className="text-lg font-semibold text-center mb-3 pt-2">Previous Chats</h2>
               <ul>
                 {sessions.map((session) => (
@@ -137,7 +138,11 @@ const ChatBot = () => {
               <div className="flex flex-col overflow-y-auto py-6 px-3 space-y-2 h-[550px]">
                 {messages.map((msg, index) => (
                   <div key={index} className={`flex p-2 rounded-lg max-w-[75%] ${msg.sender === "user" ? "bg-blue-500 text-white self-end" : "bg-gray-200 text-black self-start"}`}>
-                    {msg.text}
+                   <div className="whitespace-pre-line break-words">
+                   <ReactMarkdown>
+                   {msg.text.replace(/\s*\*\*/g, "**").trim()}
+                   </ReactMarkdown>
+                   </div>
                   </div>
                 ))}
               </div>
